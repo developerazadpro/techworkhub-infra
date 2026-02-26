@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  backend:
+    build: 
+      context:
+        ../techworkhub-backend
+    container_name: techworkhub-backend
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./techworkhub-backend:/var/www
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mysql
+      - go-service
+    environment:
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: techworkhub
+      DB_USERNAME: root
+      DB_PASSWORD: root
+    command: php artisan serve --host=0.0.0.0 --port=8000
+
+  frontend:
+    build: 
+      context: ../techworkhub-frontend
+    container_name: techworkhub-frontend
+    ports:
+      - "3000:80" # maps Nginx port 80 inside container to localhost:3000
+    depends_on:
+      - backend
+  
+  go-service:
+    build: 
+      context: ../techworkhub-go
+    container_name: techworkhub-go
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+
+  mysql:
+    image: mysql:8
+    container_name: techworkhub-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: techworkhub
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: techworkhub-phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: mysql
+      PMA_USER: root
+      PMA_PASSWORD: root
+    ports:
+      - "8080:80"
+    depends_on:
+      - mysql
+
+volumes:
+  mysql_data:
