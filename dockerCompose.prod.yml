@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+
+  # =========================
+  # Nginx (Reverse Proxy)
+  # =========================
+  nginx:
+    image: nginx:alpine
+    container_name: techworkhub-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ../techworkhub-frontend/build:/var/www/frontend
+    depends_on:
+      - backend
+      - go-service
+
+
+  # =========================
+  # Laravel Backend (php-fpm)
+  # =========================
+  backend:
+    build:
+      context: ../techworkhub-backend
+      dockerfile: Dockerfile   # Must use php-fpm version
+    container_name: techworkhub-backend
+    restart: unless-stopped
+    working_dir: /var/www
+
+    environment:
+      APP_ENV: production
+      APP_DEBUG: false
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: techworkhub
+      DB_USERNAME: root
+      DB_PASSWORD: strong_password_here   #  Change this
+
+    depends_on:
+      - mysql
+
+    expose:
+      - "9000"   # php-fpm runs internally
+
+
+  # =========================
+  # Go Service
+  # =========================
+  go-service:
+    build:
+      context: ../techworkhub-go
+    container_name: techworkhub-go
+    restart: unless-stopped
+    expose:
+      - "8081"
+
+
+  # =========================
+  # MySQL (Internal Only)
+  # =========================
+  mysql:
+    image: mysql:8
+    container_name: techworkhub-mysql
+    restart: unless-stopped
+
+    environment:
+      MYSQL_DATABASE: techworkhub
+      MYSQL_ROOT_PASSWORD: strong_password_here  # Change this
+
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+    expose:
+      - "3306"
+
+
+# =========================
+# Named Volume
+# =========================
+volumes:
+  mysql_data:

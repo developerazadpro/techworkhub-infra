@@ -2,86 +2,56 @@ name: techworkhub
 version: '3.8'
 
 services:
-
   # =========================
   # Laravel Backend
   # =========================
   backend:
-    build:
-      context: ../techworkhub-backend   # OK for prod (but usually built in CI)
+    build: 
+      context:
+        ../techworkhub-backend
     container_name: techworkhub-backend
     restart: unless-stopped
     working_dir: /var/www
 
-    # DEV ONLY → remove in production
-    # In production code should be copied during build, not mounted
+    # volume for instant Laravel code update
     volumes:
       - ../techworkhub-backend:/var/www
-
     ports:
-      - "8000:8000"  # In production use nginx reverse proxy instead
-
+      - "8000:8000"
     depends_on:
       - mysql
       - go-service
-
     environment:
       DB_CONNECTION: mysql
       DB_HOST: mysql
       DB_PORT: 3306
       DB_DATABASE: techworkhub
-      DB_USERNAME: root       # change in production
-      DB_PASSWORD: root       # change in production
-      GO_MATCHING_SERVICE_URL: http://go-service:8081
-
-    # DEV ONLY → In production use php-fpm + nginx
+      DB_USERNAME: root
+      DB_PASSWORD: root
     command: php artisan serve --host=0.0.0.0 --port=8000
 
-
-
   # =========================
-  # React Frontend
+  # React Frontend (DEV MODE)
   # =========================
   frontend:
-    build:
+    build: 
       context: ../techworkhub-frontend
     container_name: techworkhub-frontend
-    working_dir: /app
-
-    # DEV ONLY → for hot reload
-    volumes:
-      - ../techworkhub-frontend:/app
-      - /app/node_modules
-
-    # DEV ONLY → React dev server
     ports:
-      - "3000:3000"
-
-    # DEV ONLY → remove in production
-    environment:
-    - HOST=0.0.0.0
-
-    command: sh -c "npm install && npm start"
-
+      - "3000:80" # maps Nginx port 80 inside container to localhost:3000
     depends_on:
       - backend
-
-
-
+  
   # =========================
   # Go Service
   # =========================
   go-service:
-    build:
+    build: 
       context: ../techworkhub-go
     container_name: techworkhub-go
     restart: unless-stopped
-
-    working_dir: /app
     ports:
-      - "8081:8081"   # in production expose internally only
-
-
+      - "8081:8081"
 
   # =========================
   # MySQL
@@ -90,18 +60,13 @@ services:
     image: mysql:8
     container_name: techworkhub-mysql
     restart: unless-stopped
-
     environment:
       MYSQL_DATABASE: techworkhub
-      MYSQL_ROOT_PASSWORD: root   # MUST change in production
-
+      MYSQL_ROOT_PASSWORD: root
     ports:
-      - "3307:3306"   # DEV ONLY → don't expose DB in production
-
+      - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-
-
 
   # =========================
   # phpMyAdmin
@@ -110,21 +75,14 @@ services:
     image: phpmyadmin:latest
     container_name: techworkhub-phpmyadmin
     restart: unless-stopped
-
     environment:
       PMA_HOST: mysql
       PMA_USER: root
       PMA_PASSWORD: root
-
     ports:
       - "8080:80"
-
     depends_on:
       - mysql
-
-    # DEV ONLY → REMOVE ENTIRE phpmyadmin SERVICE IN PRODUCTION
-
-
 
 # =========================
 # Named Volume
