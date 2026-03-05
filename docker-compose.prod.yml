@@ -20,6 +20,7 @@ services:
       - go-service
     ports:
       - "8000:8000"   # optional; usually nginx reverse proxy
+    command: php artisan serve --host=0.0.0.0 --port=8000
 
   frontend:
     image: ghcr.io/developerazadpro/techworkhub-frontend:latest
@@ -34,6 +35,8 @@ services:
     image: ghcr.io/developerazadpro/techworkhub-go:latest
     container_name: techworkhub-go
     restart: unless-stopped
+    ports:
+    - "8081:8081"
 
   mysql:
     image: mysql:8
